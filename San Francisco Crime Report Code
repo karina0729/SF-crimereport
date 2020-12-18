@@ -1,0 +1,237 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+#import data
+data = pd.read_csv('1.csv') 
+#print(data)
+
+#Filter the columns needed and put them in data frame form.
+df = pd.DataFrame(data, columns= ['Category','DayOfWeek','Date','Time','PdDistrict','Resolution','Address']) 
+print (df)
+
+#------------------------------------------------------------------Incidents Overview: Pie Chart----------------------------------------------------------------------------#
+
+cate = pd.DataFrame(df, columns = ['Category']) #Create a new data frame to separate Category column from others
+count = cate.pivot_table(index=['Category'], aggfunc='size') #create the pivot table to count the total number of incidents for each category
+#print(count)
+
+counter = count.values.tolist() #turn the table into a list
+cate_sorted = cate.sort_values(by=['Category'], inplace=False, ascending=True) #Sort the category by alphabetiacal order
+cate2 = pd.DataFrame(cate_sorted, columns = ['Category'])
+#print(cate2)
+cate_uniq = cate2.drop_duplicates() #drop duplicates
+
+biat = pd.DataFrame(cate_uniq, columns = ['Category'])
+biat['Counter'] = counter #create a data frame with two columns, unique category and incidents counted for each category
+#print(biat)
+
+
+final = pd.DataFrame(biat, columns = ['Category','Counter'])
+final_sort = final.sort_values(by=['Counter'], inplace=False, ascending=False) #sort the table from max number of counts to the least
+#print(final_sort)
+
+cate_list = final_sort.Category.tolist()
+count_list = final_sort.Counter.tolist() #turn the count and category into lists
+#print(count_list)
+
+fig1, ax1 = plt.subplots()
+ax1.pie(count_list, labels=cate_list, autopct='%1.1f%%',
+        shadow=True, startangle=90)
+ax1.axis('equal')
+plt.show()
+
+fig1.savefig("all.png")
+
+top10 = final_sort.head(11) #Select the first 11 rows in the table
+#print(top10)
+
+others = pd.DataFrame(data = {  #Combine the rest of the categories and add their counts together
+    'Category' : ['others'],
+    'Counter' : [final_sort['Counter'][11:].sum()]})
+#print(others)
+
+comb = pd.concat([top10, others]) #concatenante the top10 table and others table together in the data frame
+#print(comb)
+
+comb_cate = comb.Category.tolist() #turn the categories into list
+comb_count = comb.Counter.tolist() #turn the count number into list
+
+explode = (0,0.1,0,0,0,0,0,0,0,0,0,0.1) #make the new pie chart
+fig2, ax2 = plt.subplots()
+ax2.pie(comb_count,explode=explode, labels=comb_cate, autopct='%1.1f%%',
+        shadow=True, startangle=90)
+ax2.axis('equal')
+
+plt.show()
+fig2.savefig("top10.png")
+
+#----------------------------------------------------------Number of Crimes By Month: Line Graph-------------------------------------------------------------------------#
+
+monthly = df['Month'] = pd.DatetimeIndex(df['Date']).month #convert the exact date into months
+#print(monthly)
+
+data1 = pd.DataFrame(df, columns = ['Category'])
+data1['Month'] = monthly
+#print(data1)
+
+data2 = data1.sort_values(by=['Month'],inplace=False, ascending=True)
+#print(data2)
+
+data3 = data2.pivot_table(index=['Month'], aggfunc='size')
+#print(data3)
+
+counter2 = data3.values.tolist()
+
+#creating lists of y-values for each category
+group = data2.groupby(data2.Category)
+y1 = group.get_group('LARCENY/THEFT')
+y1 = y1.pivot_table(index=['Month'], aggfunc='size')
+y1 = y1.tolist()
+#print(y1)
+
+y2 = group.get_group('NON-CRIMINAL')
+y2 = y2.pivot_table(index=['Month'], aggfunc='size')
+y2 = y2.tolist()
+#print(y2)
+
+y3 = group.get_group('ASSAULT')
+y3 = y3.pivot_table(index=['Month'], aggfunc='size')
+y3 = y3.tolist()
+#print(y3)
+
+y4 = group.get_group('VANDALISM')
+y4 = y4.pivot_table(index=['Month'], aggfunc='size')
+y4 = y4.tolist()
+#print(y4)
+
+y5 = group.get_group('VEHICLE THEFT')
+y5 = y5.pivot_table(index=['Month'], aggfunc='size')
+y5 = y5.tolist()
+#print(y5)
+
+y6 = group.get_group('WARRANTS')
+y6 = y6.pivot_table(index=['Month'], aggfunc='size')
+y6 = y6.tolist()
+#print(y6)
+
+y7 = group.get_group('BURGLARY')
+y7 = y7.pivot_table(index=['Month'], aggfunc='size')
+y7 = y7.tolist()
+#print(y7)
+
+y8 = group.get_group('SUSPICIOUS OCC')
+y8 = y8.pivot_table(index=['Month'], aggfunc='size')
+y8 = y8.tolist()
+#print(y8)
+
+y9 = group.get_group('MISSING PERSON')
+y9 = y9.pivot_table(index=['Month'], aggfunc='size')
+y9 = y9.tolist()
+#print(y9)
+
+y10 = group.get_group('DRUG/NARCOTIC')
+y10 = y10.pivot_table(index=['Month'], aggfunc='size')
+y10 = y10.tolist()
+#print(y10)
+
+
+months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+fin=pd.DataFrame({'Months': months, 'LARCENY/THEFT': y1, 
+                  'NON-CRIMINAL': y2, 
+                  'ASSAULT': y3, 
+                  'VANDALISM':y4,
+                  'VEHICLE THEFT':y5,
+                  'WARRANTS':y6,
+                  'BURGLARY':y7,
+                  'SUSPICIOUS OCC':y8,
+                  'MISSING PERSON':y9,
+                  'DRUG/NARCOTIC':y10 })
+
+#combine all x and y values into a data frame
+
+print(fin)
+
+#plot the data frame
+
+num=0
+for column in fin.drop('Months', axis=1):
+    num+=1
+    plt.plot(fin['Months'], fin[column], marker='', linewidth=1, alpha=1, label=column)
+plt.legend()
+
+plt.xlabel("Months")
+plt.ylabel("Counts")
+
+plt.savefig('line.png')
+
+plt.plot(months,counter2)
+plt.savefig('line2.png')
+
+#---------------------------------------------------------Number of Incidents in the Week: Pie Chart--------------------------------------------------------------------#
+
+week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+day = pd.DataFrame(df, columns = ['DayOfWeek'])
+
+day['DayOfWeek'] = pd.Categorical(day['DayOfWeek'], categories=week, ordered=True) #order the table as the order listed in week list
+
+day_count = day.pivot_table(index=['DayOfWeek'], aggfunc='size')
+
+count_list = day_count.values.tolist()
+
+#print(count_list)
+
+fig3, ax3 = plt.subplots()
+ax3.pie(count_list, labels=week, autopct='%1.1f%%',startangle=90)
+ax3.axis('equal')
+
+plt.show()
+fig3.savefig("weeks.png")
+
+#----------------------------------------------------------------------Resolutions: Bar Chart------------------------------------------------------------------------#
+
+df['Resolution'].value_counts().plot.barh(figsize = (10,8))
+plt.savefig('Resolutions.png')
+
+
+#----------------------------------------------------------Number of Incidents for Different Time: Bar Chart----------------------------------------------------------#
+
+hours = pd.DatetimeIndex(df['Time']).hour
+print(hours)
+
+time = pd.DataFrame(df, columns = ['Category'])
+time['Time'] = hours
+
+time_sort = time.sort_values(['Time'])
+
+
+time_count = time_sort.pivot_table(index=['Time'], aggfunc='size')
+#print(time_count)
+
+color = plt.cm.twilight(np.linspace(0, 5, 100))
+
+time_count.plot.bar(color = color,figsize = (24, 9))
+
+plt.title('Distribution of incident over the day', fontsize = 30)
+
+plt.savefig('DistrubutionOfDay.png')
+
+#Distribution of Incidents In District: Bar Chart
+
+color = plt.cm.magma(np.linspace(0, 1, 15))
+
+df['PdDistrict'].value_counts().plot.bar(color = color, figsize = (10,8))
+
+plt.title('District with Most Incidents',fontsize = 30)
+
+plt.savefig('District.png')
+
+color = plt.cm.ocean(np.linspace(0, 1, 15))
+df['Address'].value_counts().head(10).plot.bar(color = color, figsize = (10, 5))
+
+plt.title('Top 10 Regions in Crime',fontsize = 20)
+
+
+plt.savefig('Region.png')
